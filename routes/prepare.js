@@ -13,10 +13,9 @@ const {
 } = require('@langchain/community/embeddings/alibaba_tongyi');
 const { FaissStore } = require('@langchain/community/vectorstores/faiss');
 
+const { FAISS_PREPARE_FILE_PATH } = require('../config');
+
 const MOCK_DOCS_PATH = 'mock/su.txt';
-const FAISS_PREPARE_DIR = 'db';
-const TONGYI_EMBEDDINGS_MODEL_NAME = 'tongyi-text-embedding-v2';
-const FAISS_PREPARE_FILE_PATH = `${FAISS_PREPARE_DIR}/${TONGYI_EMBEDDINGS_MODEL_NAME}`;
 
 /* POST prepare(generate vector db static file) listing. */
 router.post('/', async function (req, res, next) {
