@@ -19,6 +19,7 @@ const {
   loadVectorStore,
   getContextRetrieverChain,
   getMessageHistory,
+  getRephraseChain,
 } = require('./shared');
 
 const DEFAULT_SYSTEM_MESSAGE = [
@@ -107,28 +108,5 @@ router.post('/', async function (req, res, next) {
     res.send({ ok: false });
   }
 });
-
-// TODO: split to shared.js
-async function getRephraseChain() {
-  const rephraseChainPrompt = ChatPromptTemplate.fromMessages([
-    [
-      'system',
-      '给定以下对话和一个后续问题，请将后续问题重述为一个独立的问题。请注意，重述的问题应该包含足够的信息，使得没有看过对话历史的人也能理解。',
-    ],
-    new MessagesPlaceholder('history'),
-    ['human', '将以下问题重述为一个独立的问题：\n{question}'],
-  ]);
-
-  const rephraseChain = RunnableSequence.from([
-    rephraseChainPrompt,
-    new ChatOllama({
-      model: OLLAMA_MODEL,
-      temperature: 1,
-    }),
-    new StringOutputParser(),
-  ]);
-
-  return rephraseChain;
-}
 
 module.exports = router;

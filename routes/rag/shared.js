@@ -4,7 +4,13 @@ const {
 const { FaissStore } = require('@langchain/community/vectorstores/faiss');
 const { RunnableSequence } = require('@langchain/core/runnables');
 const { JSONChatHistory } = require('./json-chat-history');
-const { FAISS_PREPARE_FILE_PATH } = require('../../config');
+const { ChatOllama } = require('@langchain/community/chat_models/ollama');
+const {
+  ChatPromptTemplate,
+  MessagesPlaceholder,
+} = require('@langchain/core/prompts');
+const { StringOutputParser } = require('@langchain/core/output_parsers');
+const { OLLAMA_MODEL, FAISS_PREPARE_FILE_PATH } = require('../../config');
 
 const fs = require('fs');
 const path = require('path');
@@ -44,8 +50,31 @@ const getMessageHistory = (sessionId) => {
   return new JSONChatHistory({ sessionId, dir: chatHistoryDir });
 };
 
+async function getRephraseChain() {
+  const rephraseChainPrompt = ChatPromptTemplate.fromMessages([
+    [
+      'system',
+      '给定以下对话和一个后续问题，请将后续问题重述为一个独立的问题。请注意，重述的问题应该包含足够的信息，使得没有看过对话历史的人也能理解。',
+    ],
+    new MessagesPlaceholder('history'),
+    ['human', '将以下问题重述为一个独立的问题：\n{question}'],
+  ]);
+
+  const rephraseChain = RunnableSequence.from([
+    rephraseChainPrompt,
+    new ChatOllama({
+      model: OLLAMA_MODEL,
+      temperature: 1,
+    }),
+    new StringOutputParser(),
+  ]);
+
+  return rephraseChain;
+}
+
 module.exports = {
   loadVectorStore,
   getContextRetrieverChain,
   getMessageHistory,
+  getRephraseChain,
 };
