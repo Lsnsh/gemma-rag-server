@@ -6,9 +6,25 @@
 
 Using a local Ollama Gemma model to implement the RAG process, providing embeddings and RAG chat APIs
 
-## Run
+## Setup
+
+克隆仓库：
+
+```sh
+git clone git@github.com:Lsnsh/gemma-rag-server.git
+cd gemma-rag-server
+```
+
+配置本地环境变量：
 
 ```
+echo "GOOGLE_API_KEY=xxx" >> .env.local
+echo "ALIBABA_API_KEY=xxx" >> .env.local
+```
+
+## Run
+
+```sh
 npm install
 npm start
 ```
