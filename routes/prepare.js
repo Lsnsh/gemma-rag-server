@@ -18,26 +18,35 @@ const FAISS_PREPARE_DIR = 'db';
 const TONGYI_EMBEDDINGS_MODEL_NAME = 'tongyi-text-embedding-v2';
 const FAISS_PREPARE_FILE_PATH = `${FAISS_PREPARE_DIR}/${TONGYI_EMBEDDINGS_MODEL_NAME}`;
 
-// TODO: switch to POST method
-/* GET prepare(generate vector db static file) listing. */
-router.get('/', async function (req, res, next) {
+/* POST prepare(generate vector db static file) listing. */
+router.post('/', async function (req, res, next) {
   try {
-    // TODO: use input from request
-    const loader = new TextLoader(MOCK_DOCS_PATH);
-    const docs = await loader.load();
+    // Get the text from the request body
+    const text = req.body?.text;
+    if (!text) {
+      // if body.text is not provided, return 400
+      res.status(400).send({ ok: false, message: 'text is required' });
+      return;
+    }
 
     // Split the documents into chunks
     const splitter = new RecursiveCharacterTextSplitter({
       chunkSize: 20,
       chunkOverlap: 10,
     });
-    const splitDocs = await splitter.splitDocuments(docs);
-    console.log(splitDocs);
+    let splitDocs = null;
+    if (text) {
+      splitDocs = await splitter.createDocuments([text]);
+    } else {
+      // fallback to use mock docs
+      const loader = new TextLoader(MOCK_DOCS_PATH);
+      const docs = await loader.load();
+      splitDocs = await splitter.splitDocuments(docs);
+    }
+    console.log(`[prepare] splitDocs: ${splitDocs}`);
 
     // TODO: may switch to use google embeddings
     const embeddings = new AlibabaTongyiEmbeddings({});
-    const embeddingsRes = await embeddings.embedQuery(splitDocs[0].pageContent);
-    console.log(embeddingsRes);
 
     // Save the vector store
     const vectorStore = await FaissStore.fromDocuments(splitDocs, embeddings);
