@@ -6,6 +6,7 @@ const { RunnableSequence } = require('@langchain/core/runnables');
 const { JSONChatHistory } = require('./json-chat-history');
 const { FAISS_PREPARE_FILE_PATH } = require('../../config');
 
+const fs = require('fs');
 const path = require('path');
 const join = path.posix.join;
 
@@ -33,6 +34,13 @@ const getContextRetrieverChain = (retriever) => {
 
 const getMessageHistory = (sessionId) => {
   const chatHistoryDir = join(__dirname, '../../chat_data');
+  // 检查目录是否存在
+  if (!fs.existsSync(chatHistoryDir)) {
+    // 如果目录不存在，则创建目录
+    fs.mkdirSync(chatHistoryDir, { recursive: true });
+    console.log('[rag getMessageHistory] Directory created:', chatHistoryDir);
+  }
+
   return new JSONChatHistory({ sessionId, dir: chatHistoryDir });
 };
 
