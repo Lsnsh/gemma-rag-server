@@ -21,9 +21,10 @@ const FAISS_PREPARE_FILE_PATH = `${FAISS_PREPARE_DIR}/${TONGYI_EMBEDDINGS_MODEL_
 /* POST prepare(generate vector db static file) listing. */
 router.post('/', async function (req, res, next) {
   try {
+    const isMock = req.body?.mock;
     // Get the text from the request body
     const text = req.body?.text;
-    if (!text) {
+    if (!text && !isMock) {
       // if body.text is not provided, return 400
       res.status(400).send({ ok: false, message: 'text is required' });
       return;
@@ -43,7 +44,7 @@ router.post('/', async function (req, res, next) {
       const docs = await loader.load();
       splitDocs = await splitter.splitDocuments(docs);
     }
-    console.log(`[prepare] splitDocs: ${splitDocs}`);
+    console.log(`[prepare] splitDocs:`, splitDocs);
 
     // TODO: may switch to use google embeddings
     const embeddings = new AlibabaTongyiEmbeddings({});
