@@ -6,15 +6,31 @@ const {
   ChatPromptTemplate,
   MessagesPlaceholder,
 } = require('@langchain/core/prompts');
-const { RunnableWithMessageHistory } = require('@langchain/core/runnables');
+const {
+  RunnableWithMessageHistory,
+  RunnableSequence,
+  RunnablePassthrough,
+} = require('@langchain/core/runnables');
 const { ChatMessageHistory } = require('langchain/stores/message/in_memory');
-const { RunnableSequence } = require('@langchain/core/runnables');
 const { StringOutputParser } = require('@langchain/core/output_parsers');
+
 const { OLLAMA_MODEL } = require('../../config');
+const {
+  loadVectorStore,
+  getContextRetrieverChain,
+  getMessageHistory,
+} = require('./shared');
 
 const DEFAULT_SYSTEM_MESSAGE = [
   'system',
-  'You are a helpful assistant. Answer all questions to the best of your ability. Please alaways use Chinese to communicate.',
+  `
+    你是个乐于助人的助手，精通根据作品原文详细解释和回答问题，你在回答时会引用原文。
+    并且回答时仅根据原文，尽可能回答用户问题，如果原文中没有相关内容，你可以回答“原文中没有相关内容”。
+    请务必用中文交流。
+    
+    以下是原文中跟用户回答相关的内容：
+    {context}
+  `,
 ];
 const DEFAULT_SESSION_ID = 'none';
 
@@ -32,45 +48,87 @@ router.post('/', async function (req, res, next) {
     }
     console.log(`[rag] id: ${storeId}, message: ${message}`);
 
+    const vectorStore = await loadVectorStore(storeId);
+    const vectorStoreRetriever = vectorStore.asRetriever(2);
+    const contextRetrieverChain =
+      getContextRetrieverChain(vectorStoreRetriever);
+
     // Chat with Ollama
     const model = new ChatOllama({
       model: OLLAMA_MODEL,
+      verbose: true,
     });
     const prompt = ChatPromptTemplate.fromMessages([
       DEFAULT_SYSTEM_MESSAGE,
-      new MessagesPlaceholder('history_message'),
-      ['human', '{input}'],
+      new MessagesPlaceholder('history'),
+      ['human', '{standalone_question}'],
     ]);
     const history = new ChatMessageHistory();
+    const rephraseChain = await getRephraseChain(history);
     const chain = RunnableSequence.from([
+      RunnablePassthrough.assign({
+        standalone_question: rephraseChain,
+      }),
+      RunnablePassthrough.assign({
+        context: contextRetrieverChain,
+      }),
       prompt,
       model,
       new StringOutputParser(),
     ]);
+
     const chainWithHistory = new RunnableWithMessageHistory({
       runnable: chain,
-      getMessageHistory: (_sessionId) => history,
-      inputMessagesKey: 'input',
-      historyMessagesKey: 'history_message',
+      getMessageHistory,
+      historyMessagesKey: 'history',
+      inputMessagesKey: 'question',
     });
     const sessionId = storeId || DEFAULT_SESSION_ID;
     console.log(`[rag] sessionId: ${sessionId}`);
     const chatRes = await chainWithHistory.invoke(
       {
-        input: message,
+        question: message,
       },
       {
         configurable: { sessionId: sessionId },
       }
     );
 
-    // TODO: implement RAG
+    // TODO: support stream response and no stream response
+    for await (const chunk of chatRes) {
+      console.log(`[rag response] chunk: ${chunk}`);
+      res.write(chunk);
+    }
+    res.end();
 
-    res.send({ ok: true, message: chatRes });
+    // res.send({ ok: true, message: chatRes });
   } catch (err) {
     console.log(`[rag failed] ${err}`);
     res.send({ ok: false });
   }
 });
+
+// TODO: split to shared.js
+async function getRephraseChain() {
+  const rephraseChainPrompt = ChatPromptTemplate.fromMessages([
+    [
+      'system',
+      '给定以下对话和一个后续问题，请将后续问题重述为一个独立的问题。请注意，重述的问题应该包含足够的信息，使得没有看过对话历史的人也能理解。',
+    ],
+    new MessagesPlaceholder('history'),
+    ['human', '将以下问题重述为一个独立的问题：\n{question}'],
+  ]);
+
+  const rephraseChain = RunnableSequence.from([
+    rephraseChainPrompt,
+    new ChatOllama({
+      model: OLLAMA_MODEL,
+      temperature: 1,
+    }),
+    new StringOutputParser(),
+  ]);
+
+  return rephraseChain;
+}
 
 module.exports = router;
