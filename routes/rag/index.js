@@ -1,7 +1,6 @@
 var express = require('express');
 var router = express.Router();
 
-const { FaissStore } = require('@langchain/community/vectorstores/faiss');
 const { ChatOllama } = require('@langchain/community/chat_models/ollama');
 const {
   ChatPromptTemplate,
@@ -11,7 +10,7 @@ const { RunnableWithMessageHistory } = require('@langchain/core/runnables');
 const { ChatMessageHistory } = require('langchain/stores/message/in_memory');
 const { RunnableSequence } = require('@langchain/core/runnables');
 const { StringOutputParser } = require('@langchain/core/output_parsers');
-const { OLLAMA_MODEL } = require('../config');
+const { OLLAMA_MODEL } = require('../../config');
 
 const DEFAULT_SYSTEM_MESSAGE = [
   'system',
@@ -73,12 +72,5 @@ router.post('/', async function (req, res, next) {
     res.send({ ok: false });
   }
 });
-
-const loadVectorStore = async (storeId) => {
-  const embeddings = new AlibabaTongyiEmbeddings({});
-  const directory = join(FAISS_PREPARE_FILE_PATH, storeId);
-  const vectorstore = await FaissStore.load(directory, embeddings);
-  return vectorstore;
-};
 
 module.exports = router;
