@@ -64,7 +64,7 @@ async function getRephraseChain() {
     rephraseChainPrompt,
     new ChatOllama({
       model: OLLAMA_MODEL,
-      temperature: 1,
+      temperature: 0.4,
     }),
     new StringOutputParser(),
   ]);
