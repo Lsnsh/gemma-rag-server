@@ -10,7 +10,13 @@ const {
   MessagesPlaceholder,
 } = require('@langchain/core/prompts');
 const { StringOutputParser } = require('@langchain/core/output_parsers');
-const { OLLAMA_MODEL, FAISS_PREPARE_FILE_PATH } = require('../../config');
+const {
+  OLLAMA_MODEL,
+  FAISS_PREPARE_FILE_PATH,
+  DEFAULT_REPHRASE_SYSTEM_MESSAGE,
+  DEFAULT_HUMAN_MESSAGE_CONTENT_PREFIX,
+  REPHRASE_CHAT_TEMPERATURE,
+} = require('../../config');
 
 const fs = require('fs');
 const path = require('path');
@@ -52,19 +58,16 @@ const getMessageHistory = (sessionId) => {
 
 async function getRephraseChain() {
   const rephraseChainPrompt = ChatPromptTemplate.fromMessages([
-    [
-      'system',
-      '给定以下对话和一个后续问题，请将后续问题重述为一个独立的问题。请注意，重述的问题应该包含足够的信息，使得没有看过对话历史的人也能理解。',
-    ],
+    DEFAULT_REPHRASE_SYSTEM_MESSAGE,
     new MessagesPlaceholder('history'),
-    ['human', '将以下问题重述为一个独立的问题：\n{question}'],
+    ['human', `${DEFAULT_HUMAN_MESSAGE_CONTENT_PREFIX}{question}`],
   ]);
 
   const rephraseChain = RunnableSequence.from([
     rephraseChainPrompt,
     new ChatOllama({
       model: OLLAMA_MODEL,
-      temperature: 0.4,
+      temperature: REPHRASE_CHAT_TEMPERATURE,
     }),
     new StringOutputParser(),
   ]);

@@ -13,9 +13,12 @@ const {
 } = require('@langchain/community/embeddings/alibaba_tongyi');
 const { FaissStore } = require('@langchain/community/vectorstores/faiss');
 
-const { FAISS_PREPARE_FILE_PATH } = require('../config');
-
-const MOCK_DOCS_PATH = 'mock/su.txt';
+const {
+  FAISS_PREPARE_FILE_PATH,
+  MOCK_DOCS_PATH,
+  DEFAULT_CHUNK_SIZE,
+  DEFAULT_CHUNK_OVERLAP,
+} = require('../config');
 
 /* POST prepare(generate vector db static file) listing. */
 router.post('/', async function (req, res, next) {
@@ -31,8 +34,8 @@ router.post('/', async function (req, res, next) {
 
     // Split the documents into chunks
     const splitter = new RecursiveCharacterTextSplitter({
-      chunkSize: 20,
-      chunkOverlap: 10,
+      chunkSize: DEFAULT_CHUNK_SIZE,
+      chunkOverlap: DEFAULT_CHUNK_OVERLAP,
     });
     let splitDocs = null;
     if (text) {

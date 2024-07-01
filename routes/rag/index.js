@@ -14,26 +14,17 @@ const {
 const { ChatMessageHistory } = require('langchain/stores/message/in_memory');
 const { StringOutputParser } = require('@langchain/core/output_parsers');
 
-const { OLLAMA_MODEL } = require('../../config');
+const {
+  OLLAMA_MODEL,
+  DEFAULT_SYSTEM_MESSAGE,
+  DEFAULT_SESSION_ID,
+} = require('../../config');
 const {
   loadVectorStore,
   getContextRetrieverChain,
   getMessageHistory,
   getRephraseChain,
 } = require('./shared');
-
-const DEFAULT_SYSTEM_MESSAGE = [
-  'system',
-  `
-    你是个乐于助人的助手，精通根据作品原文详细解释和回答问题，你在回答时会引用原文。
-    并且回答时仅根据原文，尽可能回答用户问题，如果原文中没有相关内容，你可以回答“原文中没有相关内容”。
-    请务必用中文交流。
-    
-    以下是原文中跟用户回答相关的内容：
-    {context}
-  `,
-];
-const DEFAULT_SESSION_ID = 'none';
 
 /* POST RAG listing. */
 router.post('/', async function (req, res, next) {
