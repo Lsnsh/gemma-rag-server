@@ -92,3 +92,11 @@ curl -X POST \
 ```
 该药品的功能主治是解表化湿，理气和中。
 ```
+
+## Debug
+
+配置本地环境变量， `langchainjs` 将会打印执行日志到控制台：
+
+```
+echo "LANGCHAIN_VERBOSE=true" >> .env.local
+```

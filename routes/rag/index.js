@@ -48,7 +48,6 @@ router.post('/', async function (req, res, next) {
     // Chat with Ollama
     const model = new ChatOllama({
       model: OLLAMA_MODEL,
-      verbose: true,
     });
     const prompt = ChatPromptTemplate.fromMessages([
       DEFAULT_SYSTEM_MESSAGE,
