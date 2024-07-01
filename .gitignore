@@ -37,5 +37,5 @@ next-env.d.ts
 
 # chat
 db
-chat_data
+history
 logs

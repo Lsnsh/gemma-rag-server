@@ -16,6 +16,7 @@ const {
   DEFAULT_REPHRASE_SYSTEM_MESSAGE,
   DEFAULT_HUMAN_MESSAGE_CONTENT_PREFIX,
   REPHRASE_CHAT_TEMPERATURE,
+  CHAT_HISTORY_DIR
 } = require('../../config');
 
 const fs = require('fs');
@@ -45,15 +46,15 @@ const getContextRetrieverChain = (retriever) => {
 };
 
 const getMessageHistory = (sessionId) => {
-  const chatHistoryDir = join(__dirname, '../../chat_data');
+  const chatHistoryPath = join(__dirname, `../../${CHAT_HISTORY_DIR}`);
   // 检查目录是否存在
-  if (!fs.existsSync(chatHistoryDir)) {
+  if (!fs.existsSync(chatHistoryPath)) {
     // 如果目录不存在，则创建目录
-    fs.mkdirSync(chatHistoryDir, { recursive: true });
-    console.log('[rag getMessageHistory] Directory created:', chatHistoryDir);
+    fs.mkdirSync(chatHistoryPath, { recursive: true });
+    console.log('[rag getMessageHistory] Directory created:', chatHistoryPath);
   }
 
-  return new JSONChatHistory({ sessionId, dir: chatHistoryDir });
+  return new JSONChatHistory({ sessionId, dir: chatHistoryPath });
 };
 
 async function getRephraseChain() {
