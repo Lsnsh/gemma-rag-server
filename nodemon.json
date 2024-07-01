@@ -1,0 +1,12 @@
+{
+  "watch": [
+    "bin/*",
+    "mock/*",
+    "public/*",
+    "routes/*",
+    "views/*",
+    "app.js",
+    "config.js",
+    "nodemon.json"
+  ]
+}
